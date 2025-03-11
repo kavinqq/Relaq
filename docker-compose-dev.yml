@@ -1,0 +1,16 @@
+services:
+  be:
+    build:
+      context: .
+      dockerfile: ./relaq/deploy/dev/Dockerfile
+    volumes:
+      - ./relaq:/app
+    ports:
+      - "8000:8000"
+    command: >
+      bash -c "
+        python manage.py migrate &&
+        python manage.py runserver 0.0.0.0:8000
+      "
+    container_name: relaq_be
+    shm_size: '2gb'  # 保留共享內存設置，確保 Chrome 穩定運行

@@ -169,3 +169,17 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+
+# Docker
+.devcontainer/
+
+# Static files
+staticfiles/
+
+# Env
+.env
+
+# Test export files
+*.xlsx
+*.pdf
