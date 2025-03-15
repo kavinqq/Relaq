@@ -22,7 +22,7 @@ class GPTChatRoleEnum(Enum):
     USER = "user"
     ASSISTANT = "assistant"
 
-
+# 
 class ChatGPTHelper:
     def __init__(self):
         try:

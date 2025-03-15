@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from ckeditor.fields import RichTextField
 
 from core.models import TimeStamped
 
@@ -39,9 +40,27 @@ class Shop(TimeStamped):
         verbose_name="店家名稱",
         max_length=255,
     )
-    address = models.CharField(
-        verbose_name="地址",
-        max_length=255,
+    # 查詢用欄位
+    city = models.CharField(
+        verbose_name="縣市",
+        max_length=20,
+        help_text="查詢用，例如：台北市、新北市",
+        db_index=True,
+        null=True,
+        blank=True,
+    )
+    district = models.CharField(
+        verbose_name="行政區",
+        max_length=20,
+        help_text="查詢用，例如：大安區、中山區",
+        db_index=True,
+        null=True,
+        blank=True,
+    )
+    # 顯示用欄位
+    address = models.TextField(
+        verbose_name="完整地址",
+        help_text="完整地址，用於前端顯示",
     )
     phone = models.CharField(
         verbose_name="電話",
@@ -72,8 +91,18 @@ class Shop(TimeStamped):
         null=True,
         blank=True,
     )    
-    ai_summary = models.TextField(
-        verbose_name="AI 摘要",
+    core_features = models.TextField(
+        verbose_name="核心特色",
+        null=True,
+        blank=True,
+    )    
+    review_summary = models.TextField(
+        verbose_name="評論摘要",
+        null=True,
+        blank=True,
+    )
+    recommended_uses = models.TextField(
+        verbose_name="推薦用途",
         null=True,
         blank=True,
     )
@@ -114,7 +143,7 @@ class Article(TimeStamped):
     cover_path = models.TextField(
         verbose_name="封面圖片路徑",
     )
-    content = models.TextField(
+    content = RichTextField(
         verbose_name="內容",
     )
     created_by = models.ForeignKey(

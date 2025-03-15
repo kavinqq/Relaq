@@ -1,7 +1,6 @@
-from pprint import pprint
 from django.core.management.base import BaseCommand
 
-from core.services import Relaq
+from core.services import CoreService
 
 
 class Command(BaseCommand):
@@ -9,17 +8,17 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--search_query",
+            "search_region",
             type=str,
-            help="搜尋關鍵字",
+            help="搜尋區域",
         )
 
     def handle(self, *args, **options):
-        search_query = options.get("search_query")
+        search_region = options.get("search_region")
 
-        relaq = Relaq()
-        file_name = relaq.get_ai_result(search_query=search_query)
+        core_service = CoreService()
+        file_name = core_service.main(search_region=search_region)
 
-        self.stdout.write(self.style.SUCCESS(f"[{search_query}] 抓取店家資料完成 -> {file_name}"))
+        self.stdout.write(self.style.SUCCESS(f"[{search_region}] 抓取店家資料完成 -> {file_name}"))
 
         return None

@@ -5,11 +5,14 @@ services:
       dockerfile: ./relaq/deploy/dev/Dockerfile
     volumes:
       - ./relaq:/app
+      - ./staticfiles:/app/staticfiles
+      - ./static:/app/static
     ports:
       - "8000:8000"
     command: >
       bash -c "
         python manage.py migrate &&
+        python manage.py collectstatic --clear --noinput &&
         python manage.py runserver 0.0.0.0:8000
       "
     container_name: relaq_be

@@ -37,12 +37,17 @@ INSTALLED_APPS = [
     'cms',
     'googlemap',
     'outscrapers',
-    
+
     # third party apps
     'ckeditor',
+    'ckeditor_uploader',
 ]
 
 MIDDLEWARE = [
+    # Project middleware
+    'core.middleware.request_logging.RequestLoggingMiddleware',
+
+    # Django middleware
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -57,7 +62,7 @@ ROOT_URLCONF = 'relaq.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -118,7 +123,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -143,6 +152,19 @@ CHROMEDRIVER_PATH = os.getenv('CHROMEDRIVER_PATH')
 
 
 # CKEditor settings
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+CKEDITOR_BASEPATH = "/static/ckeditor/ckeditor/"  # 注意：這裡要用 URL 路徑，不是文件系統路徑
 
-CKEDITOR_BASEPATH = os.path.join(STATIC_ROOT, 'ckeditor/ckeditor/')
+# 加入基本設定
+CKEDITOR_CONFIGS = {
+    'default': {
+        'toolbar': 'full',
+        'height': 300,
+        'width': "100%",
+    },
+}
+
+CKEDITOR_UPLOAD_PATH = 'uploads/'
+
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
