@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from cms.models import Article
+from cms.models import Article, Shop
 
 
 class ArticleObjSerializer(serializers.ModelSerializer):
@@ -12,22 +12,34 @@ class ArticleObjSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = ['id', 'thumbnail', 'title', 'preview_content', 'update_time']
-        ref_name = "ArticleObj"
+        ref_name = "article_obj"
+    
+
+class ShopListObjSerializer(serializers.ModelSerializer):
+    pictures = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Shop
+        fields = ['id', 'name', 'address', 'price_min', 'pictures']
+        ref_name = "shop_list_obj"
+    
+        
+    def get_pictures(self, obj: Shop):
+        pictures = obj.photos.all()
+        return [picture.image_path for picture in pictures]
     
     
-class ShopObjSerializer(serializers.Serializer):
-    name = serializers.CharField(
-        help_text="店家名稱"
-    )
-    address = serializers.CharField(
-        help_text="店家地址"
-    )
-    min_price = serializers.IntegerField(
-        help_text="最低價格"
-    )
-    pictures = serializers.ListField(
-        help_text="店家照片",
-        child=serializers.CharField(
-            help_text="照片連結"
-        )
-    )
+    
+class ShopObjSerializer(ShopListObjSerializer):    
+    class Meta(ShopListObjSerializer.Meta):
+        fields = ShopListObjSerializer.Meta.fields + [
+            'phone',
+            'business_hours',
+            'price_range',
+            'core_features',
+            'review_summary',
+            'recommended_uses'
+        ]
+        ref_name = "shop_obj"
+
+    

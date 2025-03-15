@@ -106,6 +106,22 @@ class Shop(TimeStamped):
         null=True,
         blank=True,
     )
+    price_min = models.IntegerField(
+        verbose_name="最低價格",
+        null=True,
+        blank=True,
+    )
+    price_max = models.IntegerField(
+        verbose_name="最高價格",
+        null=True,
+        blank=True,
+    )
+    business_hours = models.CharField(
+        verbose_name="營業時間",
+        max_length=255,
+        null=True,
+        blank=True,
+    )
     tags = models.ManyToManyField(
         ShopTag,
         verbose_name="店家標籤",
@@ -113,9 +129,20 @@ class Shop(TimeStamped):
         blank=True,
     )
     
+    photos: models.Manager["ShopPhoto"]
+    
     class Meta:
         verbose_name = "店家資訊"
         verbose_name_plural = "店家資訊"
+        
+        
+    @property
+    def price_range(self) -> str:
+        if self.price_min and self.price_max:
+            return f"{self.price_min} - {self.price_max}"
+        else:
+            return "沒有價格資訊"
+        
 
 
 class ShopPhoto(TimeStamped):

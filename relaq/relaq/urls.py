@@ -22,13 +22,14 @@ from django.conf.urls.static import static
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from core.constants import ResponseCode
 
 
 schema_view = get_schema_view(
     openapi.Info(
         title="Relaq API",
         default_version='v1',
-        description="Relaq API 文件",
+        description=ResponseCode.get_markdown_table(),
         terms_of_service="https://www.google.com/policies/terms/",
         contact=openapi.Contact(email="isu101220@gmail.com"),
         license=openapi.License(name="MIT License"),

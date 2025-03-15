@@ -1,73 +1,53 @@
 from rest_framework import serializers
 from core.serializers.base import PaginationSerializer
+from cms.serializers.objs import ArticleObjSerializer
 
 
-"""
-
-
-getArticlesList（取文章列表）
-request
-page      	number		 當前頁面
-response
-articles	list<obj>	thumbnail	縮圖連結
-		title	文章標題
-		description	部分內文
-		update_time	上傳時間(date time)
-
-
-
-
-getArticle（取單一文章）
-request
-id	number		 文章ID
-response
-articles	list<obj>	thumbnail	縮圖連結
-		title	文章標題
-		content	文章內文
-		update_time	上傳時間(date time)
-		writer	作者
-"""
-
-class ArticleFilterSerializer(PaginationSerializer):    
+class ArticleListReqSerializer(PaginationSerializer):    
     class Meta:
-        ref_name = "ArticleFilter"
+        ref_name = "article_list_req"
         
         
-class ArticleSerializer(serializers.Serializer):
-    ...
-
-
-
-"""
-getShopsList（取搜尋後的店家清單）
-request
-location_city	string		縣市
-location_township	string		鄉鎮
-range_from	string		價格區間（起）
-range_to	string		價格區間（迄）
-keyword	string		關鍵字
-response
-shops	list<obj>	name	店家名稱
-		address	店家地址
-		minimum	最低價格
-		pictures	店家照片
-
-
-getShopInfo（取店家資訊）
-request
-id	number		 店家ID
-response
-name	string		店家名稱
-address	string		店家地址
-phone	string		店家電話
-business_hours 	string		營業時間
-rating	string		價格區間
-pictures	string		店家照片
-advantages	string		核心特色
-comments	string		評論摘要
-recommend	string		推薦用途
-"""
-
-class ShopFilterSerializer(PaginationSerializer):
+class ArticleReqSerializer(serializers.Serializer):
+    id = serializers.IntegerField(
+        help_text="文章Model ID"
+    )
+    
     class Meta:
-        ref_name = "ShopFilter"
+        ref_name = "article_req"
+    
+
+class ShopListReqSerializer(PaginationSerializer):
+    city = serializers.CharField(
+        help_text="縣市",
+        required=False
+    )
+    township = serializers.CharField(
+        help_text="鄉鎮",
+        required=False
+    )
+    price_min = serializers.IntegerField(
+        help_text="價格最小值",
+        required=False
+    )
+    price_max = serializers.IntegerField(
+        help_text="價格最大值",
+        required=False
+    )
+    keyword = serializers.CharField(
+        help_text="關鍵字",
+        required=False
+    )
+    
+    
+    class Meta:
+        ref_name = "shop_list_req"
+        
+
+class ShopReqSerializer(serializers.Serializer):
+    id = serializers.IntegerField(
+        help_text="店家Model ID"
+    )
+    
+    class Meta:
+        ref_name = "shop_req"
