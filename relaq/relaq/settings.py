@@ -197,3 +197,68 @@ SWAGGER_SETTINGS = {
         }
     }
 }
+
+# Logging settings
+BASE_LOG_DIR = os.path.join(BASE_DIR, 'logs')
+os.makedirs(BASE_LOG_DIR, exist_ok=True)
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "require_debug_true": {
+            "()": "django.utils.log.RequireDebugTrue",
+        },
+    },
+    "formatters": {
+        "standard": {
+            "format": "[%(asctime)s][%(levelname)s][%(name)s:%(lineno)d]：%(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+        "simple": {
+            "format": "[%(asctime)s][%(levelname)s]：%(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+    },
+    "handlers": {
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+        "default": {
+            "level": "DEBUG",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": os.path.join(BASE_LOG_DIR, "debug.log"),
+            "maxBytes": 1024 * 1024 * 100,
+            "backupCount": 5,
+            "formatter": "standard",
+            "encoding": "utf-8",
+        },
+        "warn": {
+            "level": "WARN",
+            "class": "logging.handlers.RotatingFileHandler",  
+            "filename": os.path.join(BASE_LOG_DIR, "warn.log"),  
+            "maxBytes": 1024 * 1024 * 100,  
+            "backupCount": 5,  
+            "formatter": "standard",  
+            "encoding": "utf-8",
+        },
+        "error": {
+            "level": "ERROR",
+            "class": "logging.handlers.RotatingFileHandler",  
+            "filename": os.path.join(BASE_LOG_DIR, "error.log"),  
+            "maxBytes": 1024 * 1024 * 100,  
+            "backupCount": 5,  
+            "formatter": "standard",  
+            "encoding": "utf-8",
+        },
+    },
+    "loggers": {
+        "": {
+            "handlers": ["console", "default", "warn", "error"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    }
+}

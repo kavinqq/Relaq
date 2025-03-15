@@ -8,7 +8,7 @@ from enum import Enum
 from cms.models import Shop, ShopTag
 from cms.constants import CITY_PATTERN, DISTRICT_PATTERN
 from chatgpt.services import ChatGPTHelper
-from chatgpt.constants import SUMMARY_PROMPT, TAG_PROMPT
+from chatgpt.constants import SUMMARY_PROMPT, TAG_PROMPT, PRICE_MIN_AND_MAX_PROMPT
 from felo.scraper import FeloScraper
 from googlemap.services import GoogleMapHelper
 from googlemap.models import PlaceDetail
@@ -130,7 +130,10 @@ class CoreService:
     def _get_shop_price_and_service(self, shop_name: str) -> str:
         """Fetch shop price and service information."""
         try:
-            content = self.felo_scraper.get_shop_info(shop_name)
+            logger.info(f"[Core] 開始抓取 {shop_name} 的價格和服務")
+            
+            prompt = self.felo_scraper.gen_price_and_service_prompt(shop_name)
+            content = self.felo_scraper.search(prompt)
             
             # 1. 處理換行+冒號的問題
             content = re.sub(r'\n\s*：', '：', content)  # 處理換行後的冒號
@@ -142,9 +145,11 @@ class CoreService:
             # 3. 確保段落之間有適當的換行
             content = re.sub(r'。\s*([^。\n])', r'。\n\1', content)  # 在句號後加換行
             
+            logger.info(f"[Core] 抓取 {shop_name} 的價格和服務完成")
+            
             return content
         except Exception as e:
-            logger.error(f"Error fetching price and service for {shop_name}: {str(e)}")
+            logger.error(f"Error fetching price and service for {shop_name}: {str(e)}", exc_info=True)
             return ""
 
     def _gen_shop_basic_info(self, shop_data: PlaceDetail) -> str:
@@ -179,10 +184,12 @@ class CoreService:
                 
         return shop_tags
 
-    def _create_shop_entry(
+    def _create_shop(
         self,
         shop_data: PlaceDetail,
         shop_review: str,
+        price_min: int,
+        price_max: int,
         price_and_service: str,
         summary: ShopSummary,
         tags: List[ShopTag]
@@ -205,9 +212,31 @@ class CoreService:
             core_features=summary.core_features,
             review_summary=summary.review_summary,
             recommended_uses=summary.recommended_uses,
+            price_min=price_min,
+            price_max=price_max,
         )
         shop.tags.set(tags)
         return shop
+    
+    def _gen_price_min_and_max(
+        self,
+        price_and_service: str
+    ) -> Tuple[int, int]:
+        """Generate price min and max from price and service."""
+        
+        logger.info(f"[Core] 產出最低價格和最高價格")
+        
+        price_min_and_max = self.chatgpt_helper.chat(
+            user_input=price_and_service,
+            system_setting=PRICE_MIN_AND_MAX_PROMPT,
+        )
+        
+        price_min = re.search(r'最低價格: (\d+)', price_min_and_max)
+        price_max = re.search(r'最高價格: (\d+)', price_min_and_max)
+        
+        logger.info(f"[Core] 最低價格: {price_min.group(1)}, 最高價格: {price_max.group(1)}")
+        
+        return int(price_min.group(1)), int(price_max.group(1))
 
     def _process_single_shop(
         self,
@@ -219,8 +248,11 @@ class CoreService:
         try:
             # Collect shop information
             shop_basic_info = self._gen_shop_basic_info(shop_data)
-            shop_review = self._get_shop_review(shop_data.name)
             price_and_service = self._get_shop_price_and_service(shop_data.name)
+            shop_review = self._get_shop_review(shop_data.name)
+            
+            # 產出最低價格和最高價格
+            price_min, price_max = self._gen_price_min_and_max(price_and_service)
             
             # Generate AI summaries
             shop_info = f"""
@@ -242,9 +274,11 @@ class CoreService:
             shop_tags = self._process_shop_tags(ai_tag)
             
             # Create shop entry
-            shop = self._create_shop_entry(
+            shop = self._create_shop(
                 shop_data=shop_data,
                 shop_review=shop_review,
+                price_min=price_min,
+                price_max=price_max,
                 price_and_service=price_and_service,
                 summary=summary,
                 tags=shop_tags
@@ -282,7 +316,6 @@ class CoreService:
                 
             execution_time = time.time() - start_time
             logger.info(f"[Core] 抓取 {search_query} 的店家資訊完成, 共花費 {execution_time:.2f} 秒")
-            
         except Exception as e:
-            logger.error(f"[Core] 處理過程發生錯誤: {str(e)}")
+            logger.error(f"[Core] 處理過程發生錯誤: {str(e)}", exc_info=True)
             raise

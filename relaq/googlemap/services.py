@@ -1,4 +1,5 @@
 import re
+import logging
 
 import googlemaps
 from django.conf import settings
@@ -6,10 +7,13 @@ from django.conf import settings
 from googlemap.models import PlaceDetail
 
 
+logger = logging.getLogger(__name__)
+
+
 class GoogleMapHelper:
     LANGUAGE = "zh-TW"
     REGION = "TW"
-    
+
     def __init__(self):
         super().__init__()
         self.client = googlemaps.Client(key=settings.GOOGLE_MAP_API_KEY)
@@ -18,6 +22,8 @@ class GoogleMapHelper:
         self,
         query: str
     ) -> list[PlaceDetail]:
+        logger.info(f"Google Map API 搜尋地點: {query} 開始")
+
         places_result = self.client.places(
             query=query,
             language=self.LANGUAGE,
@@ -61,6 +67,8 @@ class GoogleMapHelper:
                     opening_hours=search_result.get("opening_hours", ""),
                 )
             )
+
+        logger.info(f"Google Map API 搜尋地點: {query} 結束")
 
         return places
 

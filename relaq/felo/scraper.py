@@ -1,5 +1,6 @@
 import re
 import time
+import logging
 
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
@@ -7,6 +8,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 from core.utils import SeleniumHelper
+
+
+logger = logging.getLogger(__name__)
 
 
 class FeloScraper:
@@ -17,22 +21,22 @@ class FeloScraper:
     def __init__(self):
         super().__init__()
 
-        print("[Felo] 初始化 Selenium driver")
+        logger.info("[Felo] 初始化 Selenium driver")
         self.driver = SeleniumHelper.init_driver()
-        print("[Felo] 初始化 Selenium driver 完成")
+        logger.info("[Felo] 初始化 Selenium driver 完成")
 
-    def gen_prompt(
+    def gen_price_and_service_prompt(
         self,
         shop_name: str
     ) -> str:
-        return f"請問 {shop_name} 平均價格是多少?又有提供哪些服務呢?"
+        return f"請問台灣美甲店 '{shop_name}' 提供哪些服務? 每種服務的價格又是多少?"
 
-    def get_shop_info(
+    def search(
         self,
-        shop_name: str
+        prompt: str
     ) -> str:
-        prompt = self.gen_prompt(shop_name)
-
+        logger.info(f"[Felo] 開始抓取資料")
+        
         self.driver.get(self.FELO_URL)
 
         text_area = self.driver.find_element(By.TAG_NAME, "textarea")
@@ -48,7 +52,7 @@ class FeloScraper:
         )
 
         for sec in range(1, 11):
-            print(f"[Felo] 等待 {shop_name} 的資料完成... {sec} 秒")
+            logger.info(f"[Felo] 等待資料完成... {sec} 秒")
             time.sleep(1)
 
         html_content = result.get_attribute("innerHTML")
@@ -58,8 +62,11 @@ class FeloScraper:
 
         # 取得純文字，去除 HTML 標籤
         text_content = soup.get_text(separator='\n', strip=True)
+        text_content = self._clean_data(text_content)
 
-        return self._clean_data(text_content)
+        logger.info(f"[Felo] 抓取資料完成")
+
+        return text_content
 
     def _clean_data(self, text: str) -> str:
         """清理從 Felo 抓取的數據，移除引用標記

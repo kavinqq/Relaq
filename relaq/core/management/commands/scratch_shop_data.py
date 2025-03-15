@@ -17,8 +17,8 @@ class Command(BaseCommand):
         search_region = options.get("search_region")
 
         core_service = CoreService()
-        file_name = core_service.main(search_region=search_region)
+        core_service.main(search_region=search_region)
 
-        self.stdout.write(self.style.SUCCESS(f"[{search_region}] 抓取店家資料完成 -> {file_name}"))
+        self.stdout.write(self.style.SUCCESS(f"[{search_region}] 抓取店家資料完成!"))
 
         return None
