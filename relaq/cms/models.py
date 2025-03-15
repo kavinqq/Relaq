@@ -137,14 +137,28 @@ class HomePageBanner(TimeStamped):
     image_path = models.TextField(
         verbose_name="圖片路徑",
     )
+    
+    class Meta:
+        verbose_name = "首頁Banner"
+        verbose_name_plural = "首頁Banner"
 
 
 class Article(TimeStamped):
-    cover_path = models.TextField(
-        verbose_name="封面圖片路徑",
+    thumbnail = models.TextField(
+        verbose_name="縮圖路徑",
+        null=True,
+        blank=True,
+    )
+    title = models.CharField(
+        verbose_name="標題",
+        max_length=255,
+        null=True,
+        blank=True,
     )
     content = RichTextField(
         verbose_name="內容",
+        null=True,
+        blank=True,
     )
     created_by = models.ForeignKey(
         get_user_model(),
@@ -161,7 +175,11 @@ class Article(TimeStamped):
     class Meta:
         verbose_name = "文章"
         verbose_name_plural = "文章"
-
+    
+    @property
+    def preview_content(self) -> str:
+        return self.content[:100]
+    
     
 class ArticleImage(TimeStamped):
     image_path = models.TextField(

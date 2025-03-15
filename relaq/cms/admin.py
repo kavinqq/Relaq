@@ -1,10 +1,20 @@
 from django.contrib import admin
-from django.db.models import QuerySet, Count
+from django.db.models import Count
 from django.contrib.admin import SimpleListFilter
-from cms.models import Shop, ShopTag, Article, ArticleImage
+from cms.models import (
+    Shop,
+    ShopTag,
+    Article,
+    ArticleImage,
+    HomePageBanner
+)
 
 
-# Design the admin page for the Shop model
+class HomePageBannerAdmin(admin.ModelAdmin):
+    list_display = ("id", "created_at", "updated_at")
+    search_fields = ("image_path",)
+
+
 class ShopAdmin(admin.ModelAdmin):  
     list_display = ("name", "address", "phone", "rating", "review_count", "created_at", "updated_at", "display_tags")
     search_fields = ("name", "address", "phone")
@@ -81,3 +91,4 @@ class ArticleAdmin(admin.ModelAdmin):
 admin.site.register(Shop, ShopAdmin)
 admin.site.register(ShopTag, ShopTagAdmin)
 admin.site.register(Article, ArticleAdmin)
+admin.site.register(HomePageBanner, HomePageBannerAdmin)

@@ -1,11 +1,14 @@
+import os
+import platform
+
 from django.conf import settings
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
-import platform
-import os
+from rest_framework.response import Response
+from rest_framework.status import HTTP_200_OK
 
-
+from core.constants import ResponseCode
 class SeleniumHelper:
     @staticmethod
     def init_driver():
@@ -49,3 +52,27 @@ class SeleniumHelper:
                     "sudo apt-get update && "
                     "sudo apt-get install -y chromium-browser chromium-chromedriver"
                 )
+
+
+class APIUtils:
+    @staticmethod
+    def gen_response(code_enum: ResponseCode, data=None, msg=None, status=None) -> Response:
+        """
+        生成標準響應
+        
+        Args:
+            code_enum: 響應狀態碼枚舉
+            data: 響應數據
+            msg: 自定義消息（如果不提供，則使用枚舉中的默認消息）
+            status: HTTP 狀態碼（如果不提供，則使用枚舉中的代碼）
+            
+        Returns:
+            Response: DRF 響應對象
+        """
+        response_data = {
+            "code": code_enum.code,
+            "msg": msg or code_enum.message,
+            "data": data
+        }
+
+        return Response(response_data, status=status or HTTP_200_OK)
