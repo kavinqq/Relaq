@@ -2,6 +2,7 @@ from django.core.paginator import Paginator
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
 from rest_framework.generics import GenericAPIView
 from rest_framework.status import (
     HTTP_200_OK,
@@ -33,8 +34,10 @@ from cms.serializers.objs import (
 )
 from core.constants import ResponseCode
 
-class HomePageBannerAPIView(APIView):
 
+class HomePageBannerAPIView(APIView):
+    permission_classes = [AllowAny]
+    
     @swagger_auto_schema(
         operation_summary="Banner 和最新文章",
         operation_description="Banner 和最新文章",
@@ -71,7 +74,7 @@ class HomePageBannerAPIView(APIView):
     
 class ArticleListAPIView(GenericAPIView):
     serializer_class = ArticleListReqSerializer
-
+    permission_classes = [AllowAny]
     @swagger_auto_schema(
         operation_summary="文章列表",
         operation_description="文章列表",
@@ -101,7 +104,8 @@ class ArticleListAPIView(GenericAPIView):
         
 class ArticleAPIView(GenericAPIView):
     serializer_class = ArticleReqSerializer
-
+    permission_classes = [AllowAny]
+    
     @swagger_auto_schema(
         operation_summary="文章詳情",
         operation_description="文章詳情",
@@ -150,37 +154,39 @@ class ArticleAPIView(GenericAPIView):
 
 
 class ShopListAPIView(GenericAPIView):
-        serializer_class = ShopListReqSerializer
+    serializer_class = ShopListReqSerializer
+    permission_classes = [AllowAny]
 
-        @swagger_auto_schema(
-            operation_summary="店家列表",
-            operation_description="店家列表",
-            request_body=ShopListReqSerializer,
-            responses={
-                HTTP_200_OK: ShopListObjSerializer(many=True),    
-            },
-            tags=["店家"]
-        )
-        def post(self, request: Request) -> Response:
-            serializer = self.serializer_class(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            
-            city = serializer.validated_data.get("city")
-            township = serializer.validated_data.get("township")
-            price_min = serializer.validated_data.get("price_min")
-            price_max = serializer.validated_data.get("price_max")
-            keyword = serializer.validated_data.get("keyword")
-            page = serializer.validated_data.get("page")
-            page_size = serializer.validated_data.get("page_size")
-            
-            shops = Shop.objects.filter()
-            shops_data = ShopListObjSerializer(shops, many=True).data
-            
-            return APIUtils.gen_response(ResponseCode.SUCCESS, data=shops_data)
+    @swagger_auto_schema(
+        operation_summary="店家列表",
+        operation_description="店家列表",
+        request_body=ShopListReqSerializer,
+        responses={
+            HTTP_200_OK: ShopListObjSerializer(many=True),    
+        },
+        tags=["店家"]
+    )
+    def post(self, request: Request) -> Response:
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        city = serializer.validated_data.get("city")
+        township = serializer.validated_data.get("township")
+        price_min = serializer.validated_data.get("price_min")
+        price_max = serializer.validated_data.get("price_max")
+        keyword = serializer.validated_data.get("keyword")
+        page = serializer.validated_data.get("page")
+        page_size = serializer.validated_data.get("page_size")
+        
+        shops = Shop.objects.filter()
+        shops_data = ShopListObjSerializer(shops, many=True).data
+        
+        return APIUtils.gen_response(ResponseCode.SUCCESS, data=shops_data)
 
 
 class ShopAPIView(GenericAPIView):
     serializer_class = ShopReqSerializer
+    permission_classes = [AllowAny]
 
     @swagger_auto_schema(
         operation_summary="店家詳情",
