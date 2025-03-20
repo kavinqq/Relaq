@@ -20,23 +20,28 @@ class ArticleReqSerializer(serializers.Serializer):
 class ShopListReqSerializer(PaginationSerializer):
     city = serializers.CharField(
         help_text="縣市",
-        required=False
+        required=False,
+        allow_blank=True,
     )
     township = serializers.CharField(
         help_text="鄉鎮",
-        required=False
+        required=False,
+        allow_blank=True,
     )
     price_min = serializers.IntegerField(
         help_text="價格最小值",
+        allow_null=True,
         required=False
     )
     price_max = serializers.IntegerField(
         help_text="價格最大值",
-        required=False
+        allow_null=True,
+        required=False,
     )
     keyword = serializers.CharField(
         help_text="關鍵字",
-        required=False
+        required=False,
+        allow_blank=True,
     )
     
     
