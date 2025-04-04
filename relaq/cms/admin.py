@@ -19,6 +19,10 @@ class ShopAdmin(admin.ModelAdmin):
     list_display = ("name", "address", "phone", "rating", "review_count", "created_at", "updated_at", "display_tags")
     search_fields = ("name", "address", "phone")
     list_filter = ("rating", "created_at", "updated_at")
+    filter_horizontal = ("tags",)
+    
+    def get_queryset(self, request):
+        return Shop.with_weighted_rating(super().get_queryset(request))
     
     def display_tags(self, obj):
         return ", ".join([tag.name for tag in obj.tags.all()])

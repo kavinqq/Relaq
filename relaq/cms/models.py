@@ -34,6 +34,9 @@ class ShopTag(TimeStamped):
     class Meta:
         verbose_name = "店家標籤"
         verbose_name_plural = "店家標籤"
+        
+    def __str__(self):
+        return f"{self.emoji} {self.name}({self.get_type_display()})"
 
 
 class Shop(TimeStamped):
