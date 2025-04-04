@@ -1,4 +1,5 @@
 from django.core.paginator import Paginator
+from django.db.models import Q, QuerySet, F
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,6 +11,7 @@ from rest_framework.status import (
 )
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+
 from core.utils import APIUtils
 from core.constants import ResponseCode
 from cms.serializers.requests import (
@@ -150,6 +152,7 @@ class ArticleAPIView(GenericAPIView):
         
         article_data = ArticleRespSerializer(article).data
         
+        
         return APIUtils.gen_response(ResponseCode.SUCCESS, data=article_data)
 
 
@@ -169,19 +172,67 @@ class ShopListAPIView(GenericAPIView):
     def post(self, request: Request) -> Response:
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+    
+        shops = self._filter_shops(
+            city=validated_data.get("city"),
+            township=validated_data.get("township"),
+            price_min=validated_data.get("price_min"),
+            price_max=validated_data.get("price_max"),
+            keyword=validated_data.get("keyword")
+        )
         
-        city = serializer.validated_data.get("city")
-        township = serializer.validated_data.get("township")
-        price_min = serializer.validated_data.get("price_min")
-        price_max = serializer.validated_data.get("price_max")
-        keyword = serializer.validated_data.get("keyword")
-        page = serializer.validated_data.get("page")
-        page_size = serializer.validated_data.get("page_size")
+        shops = Shop.with_weighted_rating(shops)
         
-        shops = Shop.objects.filter()
-        shops_data = ShopListObjSerializer(shops, many=True).data
+        paginator = Paginator(
+            object_list=ShopListObjSerializer(shops, many=True).data, 
+            per_page=validated_data.get("page_size")        
+        )
         
-        return APIUtils.gen_response(ResponseCode.SUCCESS, data=shops_data)
+        return APIUtils.gen_response(
+            ResponseCode.SUCCESS,
+            data={
+                "total_pages": paginator.num_pages,
+                "total_count": paginator.count,
+                "items": paginator.page(validated_data.get("page")).object_list
+            }
+        )
+    
+    def _filter_shops(
+        self,
+        city=None,
+        township=None,
+        price_min=None,
+        price_max=None,
+        keyword=None
+    ) -> QuerySet[Shop]:
+        shops = Shop.objects.all()
+        
+        # 地理位置篩選
+        if city:
+            shops = shops.filter(city__icontains=city)
+        if township:
+            shops = shops.filter(district__icontains=township)
+        
+        # 價格範圍篩選
+        if isinstance(price_min, (int, float)):
+            shops = shops.filter(price_min__gte=price_min)
+        if isinstance(price_max, (int, float)):
+            shops = shops.filter(price_max__lte=price_max)
+        
+        # 關鍵詞篩選
+        if keyword:
+            shops = shops.filter(
+                Q(reviews__icontains=keyword) |
+                Q(core_features__icontains=keyword) |
+                Q(review_summary__icontains=keyword) |
+                Q(recommended_uses__icontains=keyword)
+            )
+        
+        return shops
+        
+            
+    
 
 
 class ShopAPIView(GenericAPIView):

@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import F, ExpressionWrapper, FloatField, QuerySet
 from django.contrib.auth import get_user_model
 from ckeditor.fields import RichTextField
 
@@ -131,17 +132,31 @@ class Shop(TimeStamped):
     
     photos: models.Manager["ShopPhoto"]
     
-    class Meta:
-        verbose_name = "店家資訊"
-        verbose_name_plural = "店家資訊"
-        
-        
     @property
     def price_range(self) -> str:
         if self.price_min and self.price_max:
             return f"{self.price_min} - {self.price_max}"
         else:
             return "沒有價格資訊"
+        
+    @classmethod
+    def with_weighted_rating(cls, queryset: QuerySet["Shop"]):
+        """
+        返回按照評分權重（評分 * 評論數）排序的查詢集
+        """
+        return queryset.annotate(
+            weighted_rating=ExpressionWrapper(
+                F('rating') * F('review_count'),
+                output_field=FloatField()
+            )
+        ).order_by("-weighted_rating")
+    
+    class Meta:
+        verbose_name = "店家資訊"
+        verbose_name_plural = "店家資訊"
+        
+        
+
         
 
 
