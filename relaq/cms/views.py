@@ -162,10 +162,43 @@ class ShopListAPIView(GenericAPIView):
 
     @swagger_auto_schema(
         operation_summary="店家列表",
-        operation_description="店家列表",
+        operation_description="獲取店家列表，支持分頁、過濾和排序",
         request_body=ShopListReqSerializer,
         responses={
-            HTTP_200_OK: ShopListObjSerializer(many=True),    
+            HTTP_200_OK: openapi.Response(
+                description="成功",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'code': openapi.Schema(type=openapi.TYPE_STRING, description="響應代碼"),
+                        'msg': openapi.Schema(type=openapi.TYPE_STRING, description="響應消息"),
+                        'data': openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                'total_pages': openapi.Schema(type=openapi.TYPE_INTEGER, description="總頁數"),
+                                'total_count': openapi.Schema(type=openapi.TYPE_INTEGER, description="總記錄數"),
+                                'items': openapi.Schema(
+                                    type=openapi.TYPE_ARRAY,
+                                    items=openapi.Schema(
+                                        type=openapi.TYPE_OBJECT,
+                                        properties={
+                                            'id': openapi.Schema(type=openapi.TYPE_INTEGER, description="店家ID"),
+                                            'name': openapi.Schema(type=openapi.TYPE_STRING, description="店家名稱"),
+                                            'address': openapi.Schema(type=openapi.TYPE_STRING, description="店家地址"),
+                                            'price_min': openapi.Schema(type=openapi.TYPE_INTEGER, description="最低價格"),
+                                            'pictures': openapi.Schema(
+                                                type=openapi.TYPE_ARRAY,
+                                                items=openapi.Schema(type=openapi.TYPE_STRING),
+                                                description="店家圖片列表"
+                                            )
+                                        }
+                                    )
+                                )
+                            }
+                        )
+                    }
+                )
+            )
         },
         tags=["店家"]
     )
