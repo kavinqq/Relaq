@@ -22,6 +22,7 @@ from cms.serializers.requests import (
 )
 from cms.serializers.response import (
     HomePageResponseSerializer,
+    ArticleListRespSerializer,
     ArticleRespSerializer,
 )
 from cms.models import (
@@ -32,14 +33,14 @@ from cms.models import (
 from cms.serializers.objs import (
     ArticleObjSerializer,
     ShopObjSerializer,
-    ShopListObjSerializer, 
+    ShopListObjSerializer,
 )
 from core.constants import ResponseCode
 
 
 class HomePageBannerAPIView(APIView):
     permission_classes = [AllowAny]
-    
+
     @swagger_auto_schema(
         operation_summary="Banner 和最新文章",
         operation_description="Banner 和最新文章",
@@ -57,63 +58,116 @@ class HomePageBannerAPIView(APIView):
                 ResponseCode.NO_DATA,
                 msg="找不到 Banner 圖片"
             )
-        
+
         # 獲取最新三篇文章
         articles = Article.objects.order_by("-created_at")[:3]
-        
+
         # 序列化數據
         articles_data = ArticleObjSerializer(articles, many=True).data
-        
+
         # 構建響應
         response_data = {
             "banner": banner.image_path,
             "articles": articles_data
         }
-        
+
         return APIUtils.gen_response(ResponseCode.SUCCESS, data=response_data)
-        
-    
-    
+
+
 class ArticleListAPIView(GenericAPIView):
     serializer_class = ArticleListReqSerializer
     permission_classes = [AllowAny]
     @swagger_auto_schema(
         operation_summary="文章列表",
-        operation_description="文章列表",
+        operation_description="獲取文章列表，支持分頁",
         request_body=ArticleListReqSerializer,
         responses={
-            HTTP_200_OK: ArticleObjSerializer(many=True),
+            HTTP_200_OK: openapi.Response(
+                description="成功",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'code': openapi.Schema(type=openapi.TYPE_STRING, description="響應代碼"),
+                        'msg': openapi.Schema(type=openapi.TYPE_STRING, description="響應消息"),
+                        'data': openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                'total_pages': openapi.Schema(type=openapi.TYPE_INTEGER, description="總頁數"),
+                                'total_count': openapi.Schema(type=openapi.TYPE_INTEGER, description="總記錄數"),
+                                'items': openapi.Schema(
+                                    type=openapi.TYPE_ARRAY,
+                                    items=openapi.Schema(
+                                        type=openapi.TYPE_OBJECT,
+                                        properties={
+                                            'id': openapi.Schema(type=openapi.TYPE_INTEGER, description="文章ID"),
+                                            'thumbnail': openapi.Schema(type=openapi.TYPE_STRING, description="文章縮圖URL"),
+                                            'title': openapi.Schema(type=openapi.TYPE_STRING, description="文章標題"),
+                                            'update_time': openapi.Schema(type=openapi.TYPE_STRING, description="更新時間，格式：YYYY-MM-DD"),
+                                            'preview_content': openapi.Schema(type=openapi.TYPE_STRING, description="文章預覽內容")
+                                        }
+                                    )
+                                )
+                            }
+                        )
+                    }
+                )
+            )
         },
         tags=["文章"]
     )
     def post(self, request: Request) -> Response:
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
-        page = serializer.validated_data.get("page")
-        page_size = serializer.validated_data.get("page_size")
-        
-        articles = Article.objects.order_by("-created_at")
-        paginator = Paginator(articles, page_size)
-        articles = paginator.page(page)
-        
-        articles_data = ArticleObjSerializer(articles, many=True).data
-        
-        return APIUtils.gen_response(ResponseCode.SUCCESS, data=articles_data)
-        
-        
-        
-        
+
+        articles = Article.objects.all().order_by("-created_at")
+        articles_data = ArticleListRespSerializer(articles, many=True).data
+
+        paginator = Paginator(
+            object_list=articles_data,
+            per_page=serializer.validated_data.get("page_size")
+        )
+        articles = paginator.page(serializer.validated_data.get("page"))
+
+        return APIUtils.gen_response(
+            ResponseCode.SUCCESS,
+            data={
+                "total_pages": paginator.num_pages,
+                "total_count": paginator.count,
+                "items": articles.object_list
+            }
+        )
+
+
 class ArticleAPIView(GenericAPIView):
     serializer_class = ArticleReqSerializer
     permission_classes = [AllowAny]
-    
+
     @swagger_auto_schema(
         operation_summary="文章詳情",
         operation_description="文章詳情",
         request_body=ArticleReqSerializer,
         responses={
-            HTTP_200_OK: ArticleRespSerializer,
+            HTTP_200_OK: openapi.Response(
+                description="成功",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'code': openapi.Schema(type=openapi.TYPE_STRING, description="響應代碼"),
+                        'msg': openapi.Schema(type=openapi.TYPE_STRING, description="響應消息"),
+                        'data': openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                'id': openapi.Schema(type=openapi.TYPE_INTEGER, description="文章ID"),
+                                'thumbnail': openapi.Schema(type=openapi.TYPE_STRING, description="文章縮圖URL"),
+                                'title': openapi.Schema(type=openapi.TYPE_STRING, description="文章標題"),
+                                'update_time': openapi.Schema(type=openapi.TYPE_STRING, description="更新時間，格式：YYYY-MM-DD"),
+                                'created_by': openapi.Schema(type=openapi.TYPE_STRING, description="文章作者"),
+                                'content': openapi.Schema(type=openapi.TYPE_STRING, description="文章內容")
+                            }
+                        )
+                    }
+                )
+            ),
             HTTP_404_NOT_FOUND: openapi.Response(
                 description="找不到文章",
                 schema=openapi.Schema(
@@ -138,9 +192,9 @@ class ArticleAPIView(GenericAPIView):
     def post(self, request: Request) -> Response:
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         article_id = serializer.validated_data.get("id")
-        
+
         try:
             article = Article.objects.get(id=article_id)
         except Article.DoesNotExist:
@@ -149,10 +203,10 @@ class ArticleAPIView(GenericAPIView):
                 msg="找不到文章",
                 status=HTTP_404_NOT_FOUND
             )
-        
+
         article_data = ArticleRespSerializer(article).data
-        
-        
+
+
         return APIUtils.gen_response(ResponseCode.SUCCESS, data=article_data)
 
 
@@ -206,7 +260,7 @@ class ShopListAPIView(GenericAPIView):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
-    
+
         shops = self._filter_shops(
             city=validated_data.get("city"),
             township=validated_data.get("township"),
@@ -214,14 +268,14 @@ class ShopListAPIView(GenericAPIView):
             price_max=validated_data.get("price_max"),
             keyword=validated_data.get("keyword")
         )
-        
+
         shops = Shop.with_weighted_rating(shops)
-        
+
         paginator = Paginator(
-            object_list=ShopListObjSerializer(shops, many=True).data, 
-            per_page=validated_data.get("page_size")        
+            object_list=ShopListObjSerializer(shops, many=True).data,
+            per_page=validated_data.get("page_size")
         )
-        
+
         return APIUtils.gen_response(
             ResponseCode.SUCCESS,
             data={
@@ -230,7 +284,7 @@ class ShopListAPIView(GenericAPIView):
                 "items": paginator.page(validated_data.get("page")).object_list
             }
         )
-    
+
     def _filter_shops(
         self,
         city=None,
@@ -240,19 +294,19 @@ class ShopListAPIView(GenericAPIView):
         keyword=None
     ) -> QuerySet[Shop]:
         shops = Shop.objects.all()
-        
+
         # 地理位置篩選
         if city:
             shops = shops.filter(city__icontains=city)
         if township:
             shops = shops.filter(district__icontains=township)
-        
+
         # 價格範圍篩選
         if isinstance(price_min, (int, float)):
             shops = shops.filter(price_min__gte=price_min)
         if isinstance(price_max, (int, float)):
             shops = shops.filter(price_max__lte=price_max)
-        
+
         # 關鍵詞篩選
         if keyword:
             shops = shops.filter(
@@ -261,11 +315,11 @@ class ShopListAPIView(GenericAPIView):
                 Q(review_summary__icontains=keyword) |
                 Q(recommended_uses__icontains=keyword)
             )
-        
+
         return shops
-        
-            
-    
+
+
+
 
 
 class ShopAPIView(GenericAPIView):
@@ -302,9 +356,9 @@ class ShopAPIView(GenericAPIView):
     def post(self, request: Request) -> Response:
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         shop_id = serializer.validated_data.get("id")
-        
+
         try:
             shop = Shop.objects.get(id=shop_id)
         except Shop.DoesNotExist:
@@ -313,7 +367,7 @@ class ShopAPIView(GenericAPIView):
                 msg="找不到店家",
                 status=HTTP_404_NOT_FOUND
             )
-        
+
         shop_data = ShopObjSerializer(shop).data
-        
+
         return APIUtils.gen_response(ResponseCode.SUCCESS, data=shop_data)

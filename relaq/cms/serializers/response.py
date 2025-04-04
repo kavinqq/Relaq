@@ -15,12 +15,24 @@ class HomePageResponseSerializer(serializers.Serializer):
         ref_name = "home_page_resp"
         
         
-class ArticleRespSerializer(ArticleObjSerializer):
-    created_by = serializers.SerializerMethodField()
+class ArticleListRespSerializer(ArticleObjSerializer):
+    preview_content = serializers.CharField()
         
     class Meta(ArticleObjSerializer.Meta):
         ref_name = "article_resp"
-        fields = ArticleObjSerializer.Meta.fields + ['created_by']          
+        fields = ArticleObjSerializer.Meta.fields + ['preview_content']          
+        
+    
+    
+class ArticleRespSerializer(ArticleObjSerializer):
+    created_by = serializers.SerializerMethodField(
+        help_text="文章作者",
+        label="作者"
+    )
+    
+    class Meta(ArticleObjSerializer.Meta):
+        ref_name = "article_resp"
+        fields = ArticleObjSerializer.Meta.fields + ["created_by", "content"]
         
     def get_created_by(self, obj: Article):
         return obj.created_by.username
