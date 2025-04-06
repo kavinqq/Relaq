@@ -87,6 +87,11 @@ class ShopObjSerializer(ShopListObjSerializer):
         label="推薦用途",
         help_text="店家推薦用途"
     )
+    tags = serializers.SerializerMethodField(
+        label="標籤",
+        help_text="店家標籤列表"
+    )
+    
     
     class Meta(ShopListObjSerializer.Meta):
         fields = ShopListObjSerializer.Meta.fields + [
@@ -95,8 +100,11 @@ class ShopObjSerializer(ShopListObjSerializer):
             'price_range',
             'core_features',
             'review_summary',
-            'recommended_uses'
+            'recommended_uses',
+            'tags'
         ]
         ref_name = "shop_obj"
-
+    
+    def get_tags(self, obj: Shop):
+        return [tag.name for tag in obj.tags.all()]
     
