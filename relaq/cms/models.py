@@ -85,27 +85,27 @@ class Shop(TimeStamped):
         decimal_places=2,
         default=0,
     )
-    reviews = models.TextField(
+    reviews = RichTextField(
         verbose_name="評論",
         null=True,
         blank=True,
     )
-    price_and_service = models.TextField(
+    price_and_service = RichTextField(
         verbose_name="價格與服務",
         null=True,
         blank=True,
     )    
-    core_features = models.TextField(
+    core_features = RichTextField(
         verbose_name="核心特色",
         null=True,
         blank=True,
     )    
-    review_summary = models.TextField(
+    review_summary = RichTextField(
         verbose_name="評論摘要",
         null=True,
         blank=True,
     )
-    recommended_uses = models.TextField(
+    recommended_uses = RichTextField(
         verbose_name="推薦用途",
         null=True,
         blank=True,
