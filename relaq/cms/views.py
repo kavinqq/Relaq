@@ -319,9 +319,6 @@ class ShopListAPIView(GenericAPIView):
         return shops
 
 
-
-
-
 class ShopAPIView(GenericAPIView):
     serializer_class = ShopReqSerializer
     permission_classes = [AllowAny]
