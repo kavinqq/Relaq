@@ -143,6 +143,8 @@ OUTSCRAPER_API_KEY = os.getenv('OUTSCRAPER_API_KEY')
 GOOGLE_MAP_API_KEY = os.getenv('GOOGLE_MAP_API_KEY')
 PERPLEXITY_API_KEY = os.getenv('PERPLEXITY_API_KEY')
 
+# Catch Limit
+CATCH_LIMIT = int(os.getenv('CATCH_LIMIT'))
 
 # admin settings
 ADMIN_SITE_HEADER = "Relaq CMS"
@@ -262,3 +264,4 @@ LOGGING = {
         },
     }
 }
+
