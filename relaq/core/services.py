@@ -34,6 +34,24 @@ class ShopSummary:
 
 class AISummaryParser:
     @staticmethod
+    def _clean_html_content(content: str) -> str:
+        """清理 HTML 內容，移除不需要的標籤和內容"""
+        # 移除 <p>```</p> 和相關的換行
+        content = re.sub(r'<p>```</p>\s*$', '', content)
+        content = re.sub(r'<p>```</p>\n*$', '', content)
+        
+        # 移除空的 <p></p> 標籤
+        content = re.sub(r'<p>\s*</p>', '', content)
+        
+        # 移除多餘的換行
+        content = re.sub(r'\n{3,}', '\n\n', content)
+        
+        # 移除開頭和結尾的空白
+        content = content.strip()
+        
+        return content
+
+    @staticmethod
     def parse_summary(ai_response: str) -> ShopSummary:
         """Parse AI response into structured shop summary.
         
@@ -56,26 +74,29 @@ class AISummaryParser:
             if not line:
                 continue
                 
-            # Determine current section
-            if line.startswith(SummarySection.CORE_FEATURES.value):
+            # Determine current section based on HTML h1 tags
+            if '<h1>核心特色</h1>' in line:
                 current_section = 'core_features'
-            elif line.startswith(SummarySection.REVIEW_SUMMARY.value):
+            elif '<h1>評價摘要</h1>' in line:
                 current_section = 'review_summary'
-            elif line.startswith(SummarySection.RECOMMENDED_USES.value):
+            elif '<h1>推薦用途</h1>' in line:
                 current_section = 'recommended_uses'
-            elif line.startswith(SummarySection.BASIC_INFO.value):
+            elif '<h1>店名與基本資訊</h1>' in line:
                 current_section = None
-            elif current_section:
-                sections[current_section].append(line)
+            elif current_section and line:
+                # 只收集非空行且不是 h1 標籤的內容
+                if not line.startswith('<h1>'):
+                    sections[current_section].append(line)
         
+        # 清理每個區段的內容
         return ShopSummary(
-            core_features='\n'.join(sections['core_features']).strip(),
-            review_summary='\n'.join(sections['review_summary']).strip(),
-            recommended_uses='\n'.join(sections['recommended_uses']).strip()
+            core_features=AISummaryParser._clean_html_content('\n'.join(sections['core_features']).strip()),
+            review_summary=AISummaryParser._clean_html_content('\n'.join(sections['review_summary']).strip()),
+            recommended_uses=AISummaryParser._clean_html_content('\n'.join(sections['recommended_uses']).strip())
         )
 
 class CoreService:
-    def __init__(self, catch_limit: int = 10):
+    def __init__(self, catch_limit: int = 1):
         self.catch_limit = catch_limit
         self.search_keyword = "美甲"
         
@@ -234,6 +255,10 @@ class CoreService:
         price_min = re.search(r'最低價格: (\d+)', price_min_and_max)
         price_max = re.search(r'最高價格: (\d+)', price_min_and_max)
         
+        if not price_min or not price_max:
+            logger.error(f"[Core] 無法從 {price_and_service} 中產出最低價格和最高價格")
+            return 0, 0
+        
         logger.info(f"[Core] 最低價格: {price_min.group(1)}, 最高價格: {price_max.group(1)}")
         
         return int(price_min.group(1)), int(price_max.group(1))
@@ -265,6 +290,7 @@ class CoreService:
                 user_input=shop_info,
                 system_setting=SUMMARY_PROMPT,
             )
+
             summary = self.summary_parser.parse_summary(ai_summary)
             
             ai_tag = self.chatgpt_helper.chat(
@@ -288,7 +314,7 @@ class CoreService:
             return shop
             
         except Exception as e:
-            logger.error(f"Error processing shop {shop_data.name}: {str(e)}")
+            logger.error(f"Error processing shop {shop_data.name}: {str(e)}", exc_info=True)
             return None
 
     def main(self, search_region: str) -> None:
@@ -311,8 +337,6 @@ class CoreService:
             # Process shops
             for index, shop_data in enumerate(all_shop_data[:self.catch_limit], start=1):
                 self._process_single_shop(shop_data, index, total_progress)
-                
-                break
                 
             execution_time = time.time() - start_time
             logger.info(f"[Core] 抓取 {search_query} 的店家資訊完成, 共花費 {execution_time:.2f} 秒")
