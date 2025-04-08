@@ -336,6 +336,10 @@ class CoreService:
             
             # Process shops
             for index, shop_data in enumerate(all_shop_data[:self.catch_limit], start=1):
+                if Shop.objects.filter(name=shop_data.name).exists():
+                    logger.info(f"[Core] 店家 {shop_data.name} 已存在，跳過")
+                    continue
+                
                 self._process_single_shop(shop_data, index, total_progress)
                 
             execution_time = time.time() - start_time
