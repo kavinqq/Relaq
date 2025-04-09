@@ -136,7 +136,10 @@ class CoreService:
 
     def _get_all_shop_data(self, search_query: str) -> List[PlaceDetail]:
         """Fetch shop data from Google Maps API."""
-        return self.google_map_helper.search_places(query=search_query)
+        return self.google_map_helper.search_places(
+            query=search_query,
+            catch_limit=self.catch_limit
+        )
 
     def _get_shop_review(self, shop_name: str) -> str:
         """Fetch and process shop reviews."""
