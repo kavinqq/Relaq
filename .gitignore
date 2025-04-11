@@ -183,3 +183,6 @@ staticfiles/
 # Test export files
 *.xlsx
 *.pdf
+
+# Place photos
+media/

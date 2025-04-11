@@ -1,4 +1,7 @@
 from rest_framework import serializers
+from django.conf import settings
+from urllib.parse import urljoin
+
 from cms.models import Article, Shop
 
 
@@ -45,22 +48,30 @@ class ShopListObjSerializer(serializers.ModelSerializer):
         label="最低價格",
         help_text="店家最低消費價格"
     )
-    pictures = serializers.SerializerMethodField(
-        label="圖片",
-        help_text="店家圖片列表"
+    photos = serializers.SerializerMethodField(
+        label="照片",
+        help_text="店家照片列表"
     )
     
     class Meta:
         model = Shop
-        fields = ['id', 'name', 'address', 'price_min', 'pictures']
+        fields = ['id', 'name', 'address', 'price_min', 'photos']
         ref_name = "shop_list_obj"
+        swagger_schema_fields = {
+            "photos": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "店家照片列表"
+            }
+        }
     
         
-    def get_pictures(self, obj: Shop):
-        pictures = obj.photos.all()
-        return [picture.image_path for picture in pictures]
-    
-    
+    def get_photos(self, obj: Shop) -> list[str]:
+        return [
+            urljoin(settings.DOMAIN, photo.image_path)
+            for photo in obj.photos.all()
+        ]
+
     
 class ShopObjSerializer(ShopListObjSerializer):    
     phone = serializers.CharField(
@@ -91,6 +102,7 @@ class ShopObjSerializer(ShopListObjSerializer):
         label="標籤",
         help_text="店家標籤列表"
     )
+
     
     
     class Meta(ShopListObjSerializer.Meta):
@@ -101,10 +113,17 @@ class ShopObjSerializer(ShopListObjSerializer):
             'core_features',
             'review_summary',
             'recommended_uses',
-            'tags'
+            'tags',
+            'photos'
         ]
         ref_name = "shop_obj"
+        swagger_schema_fields = {
+            "tags": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "店家標籤列表"
+            }
+        }
     
     def get_tags(self, obj: Shop):
         return [tag.name for tag in obj.tags.all()]
-    

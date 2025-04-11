@@ -170,9 +170,13 @@ CKEDITOR_CONFIGS = {
 
 CKEDITOR_UPLOAD_PATH = 'uploads/'
 
-# Media files
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# Media files (Uploaded files)
+MEDIA_URL = '/media/'  # 這是對外的 URL 路徑
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # 這是實際儲存的路徑
+
+# 確保 media 目錄存在
+if not os.path.exists(MEDIA_ROOT):
+    os.makedirs(MEDIA_ROOT)
 
 # REST Framework settings
 REST_FRAMEWORK = {
@@ -265,3 +269,13 @@ LOGGING = {
     }
 }
 
+# Google Map Photo Size
+MAX_PHOTO_WIDTH = int(os.getenv('MAX_PHOTO_WIDTH'))
+MAX_PHOTO_HEIGHT = int(os.getenv('MAX_PHOTO_HEIGHT'))
+
+# Domain setting for full URLs
+DOMAIN = (
+    "http://127.0.0.1:8000"
+    if DEBUG
+    else os.getenv('DOMAIN')
+)

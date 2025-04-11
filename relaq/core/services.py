@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Optional, List, Dict, Tuple
 from enum import Enum
 
-from cms.models import Shop, ShopTag
+from cms.models import Shop, ShopTag, ShopPhoto
 from cms.constants import CITY_PATTERN, DISTRICT_PATTERN
 from chatgpt.services import ChatGPTHelper
 from chatgpt.constants import SUMMARY_PROMPT, TAG_PROMPT, PRICE_MIN_AND_MAX_PROMPT
@@ -221,24 +221,29 @@ class CoreService:
         """Create shop database entry with all collected information."""
         # 解析地址
         city, district = self._parse_address(shop_data.address)
-        
-        shop = Shop.objects.create(
+
+        shop, is_created = Shop.objects.update_or_create(
             name=shop_data.name,
-            address=shop_data.address,
-            city=city,
-            district=district,
-            phone=shop_data.phone,
-            website=shop_data.website,
-            rating=shop_data.rating,
-            review_count=shop_data.user_ratings_total,
-            reviews=shop_review,
-            price_and_service=price_and_service,
-            core_features=summary.core_features,
-            review_summary=summary.review_summary,
-            recommended_uses=summary.recommended_uses,
-            price_min=price_min,
-            price_max=price_max,
+            defaults={
+                'address': shop_data.address,
+                'city': city,
+                'district': district,
+                'phone': shop_data.phone,
+                'website': shop_data.website,
+                'rating': shop_data.rating,
+                'rating_count': shop_data.user_ratings_total,
+                'reviews': shop_review,
+                'price_and_service': price_and_service,
+                'core_features': summary.core_features,
+                'review_summary': summary.review_summary,
+                'recommended_uses': summary.recommended_uses,
+                'price_min': price_min,
+                'price_max': price_max,
+            }
         )
+        
+        logger.info(f"[Core] 店家 {shop_data.name} {'新增' if is_created else '更新'} 成功")
+
         shop.tags.set(tags)
         return shop
     
@@ -313,6 +318,16 @@ class CoreService:
                 tags=shop_tags
             )
             
+            # 照片ForeignKey
+            bulk_create_list = [
+                ShopPhoto(
+                    shop=shop,
+                    image_path=photo_url
+                )
+                for photo_url in shop_data.photos
+            ]
+            ShopPhoto.objects.bulk_create(bulk_create_list)
+            
             logger.info(f"\033[92m 店家資訊: {shop.name} 抓取成功! 進度: {index}/{total} \033[0m")
             return shop
             
@@ -339,8 +354,11 @@ class CoreService:
             
             # Process shops
             for index, shop_data in enumerate(all_shop_data[:self.catch_limit], start=1):
-                if Shop.objects.filter(name=shop_data.name).exists():
-                    logger.info(f"[Core] 店家 {shop_data.name} 已存在，跳過")
+                shop_exist = Shop.objects.filter(name=shop_data.name).exists()
+                shop_photo_exist = ShopPhoto.objects.filter(shop__name=shop_data.name).exists()
+                
+                if shop_exist and shop_photo_exist:
+                    logger.info(f"\033[91m [Core] 店家 {shop_data.name} 已存在，跳過 \033[0m")
                     continue
                 
                 self._process_single_shop(shop_data, index, total_progress)

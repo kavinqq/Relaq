@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -10,6 +10,7 @@ class PlaceDetail:
     phone: str
     user_ratings_total: int
     opening_hours: dict
+    photos: list[str] = field(default_factory=list)
 
 @dataclass
 class Place:

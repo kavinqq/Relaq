@@ -43,7 +43,7 @@ urlpatterns = [
     
     # 應用 URL
     path('', include('cms.urls')),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # 在開發環境中提供媒體文件
 if settings.DEBUG:    
