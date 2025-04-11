@@ -313,8 +313,15 @@ class ShopListAPIView(GenericAPIView):
                 Q(reviews__icontains=keyword) |
                 Q(core_features__icontains=keyword) |
                 Q(review_summary__icontains=keyword) |
-                Q(recommended_uses__icontains=keyword)
+                Q(recommended_uses__icontains=keyword) |
+                Q(tags__name__icontains=keyword) |
+                Q(name__icontains=keyword) |
+                Q(address__icontains=keyword) |
+                Q(phone__icontains=keyword) |
+                Q(website__icontains=keyword)
             )
+            
+        shops = shops.distinct()
 
         return shops
 
