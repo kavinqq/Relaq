@@ -158,9 +158,8 @@ class Shop(TimeStamped):
         verbose_name = "店家資訊"
         verbose_name_plural = "店家資訊"
         
-        
-
-        
+    def __str__(self):
+        return self.name
 
 
 class ShopPhoto(TimeStamped):
@@ -176,6 +175,9 @@ class ShopPhoto(TimeStamped):
     class Meta:
         verbose_name = "店家照片"
         verbose_name_plural = "店家照片"
+        
+    def __str__(self):
+        return f"{self.shop.name}_photo"
 
 
 class HomePageBanner(TimeStamped):
