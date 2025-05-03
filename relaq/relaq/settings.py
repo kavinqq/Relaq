@@ -43,12 +43,22 @@ INSTALLED_APPS = [
     'ckeditor_uploader',
     'rest_framework',
     'drf_yasg',
-    
+    'corsheaders',    
 ]
+
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
 
 MIDDLEWARE = [
     # Project middleware
     'core.middleware.request_logging.RequestLoggingMiddleware',
+
+    # CORS middleware
+    'corsheaders.middleware.CorsMiddleware',
 
     # Django middleware
     'django.middleware.security.SecurityMiddleware',
