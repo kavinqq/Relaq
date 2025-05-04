@@ -1,0 +1,41 @@
+services:
+  fe:
+    container_name: relaq_fe
+    build:
+      context: .
+      dockerfile: ./frontend/deploy/uat/Dockerfile
+
+    ports:
+      - 3000:3000
+    networks:
+      - relaq-network
+    depends_on:
+      - be
+
+  be:
+    container_name: relaq_be
+    build:
+      context: .
+      dockerfile: ./relaq/deploy/uat/Dockerfile
+    volumes:
+      - ./relaq:/app
+      - ./staticfiles:/app/staticfiles
+      - ./static:/app/static
+    ports:
+      - "8000:8000"
+    command: >
+      bash -c "
+        python manage.py migrate &&
+        python manage.py collectstatic --clear --noinput &&
+        python manage.py runserver 0.0.0.0:8000
+      "
+    shm_size: '2gb'
+    networks:
+      - relaq-network
+
+networks:
+  relaq-network:
+    driver: bridge
+
+volumes:
+  static:
