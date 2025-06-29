@@ -112,10 +112,11 @@ class ArticleImageInline(admin.TabularInline):
 
 
 class ArticleAdmin(admin.ModelAdmin):
-    list_display = ("id", "created_by", "created_at", "updated_at")
-    list_filter = ("created_by", "updated_at")
-    search_fields = ("content",)
+    list_display = ("title", "created_by", "created_at", "updated_at")
+    list_filter = ("created_by", "updated_at", "title")
+    search_fields = ("title",)
     inlines = [ArticleImageInline]
+    readonly_fields = ("created_by",)
     
     def save_model(self, request, obj, form, change):
         if not change:
